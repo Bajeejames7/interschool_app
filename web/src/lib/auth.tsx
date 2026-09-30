@@ -8,6 +8,8 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
   refresh: () => Promise<void>;
+  /** The first-sign-in password was chosen: unlock the app straight away. */
+  passwordSet: () => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -57,8 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMe(res.me);
   };
 
+  const passwordSet = useCallback(() => {
+    setMe((current) => current && { ...current, mustChangePassword: false });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ me, loading, signIn, signOut, refresh }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ me, loading, signIn, signOut, refresh, passwordSet }}>{children}</AuthContext.Provider>
   );
 }
 

@@ -7,7 +7,7 @@ import { Notice, Page, TopBar } from "../components/ui";
 
 export function AccountPage() {
   const me = useMe();
-  const { signOut, refresh } = useAuth();
+  const { signOut, passwordSet } = useAuth();
   const navigate = useNavigate();
   const firstSignIn = me.mustChangePassword;
   const [current, setCurrent] = useState("");
@@ -24,9 +24,12 @@ export function AccountPage() {
       setCurrent("");
       setNext("");
       setStatus({ tone: "good", text: "Password changed." });
-      await refresh(); // lifts the first-sign-in lock
-      // First sign-in done: on to the schools.
-      if (firstSignIn) navigate("/", { replace: true });
+      if (firstSignIn) {
+        // First sign-in done: unlock and go straight to the dashboard. The
+        // server already cleared the flag, so no second request is needed.
+        passwordSet();
+        navigate("/", { replace: true });
+      }
     } catch (err) {
       setStatus({ tone: "bad", text: err instanceof Error ? err.message : "Not changed" });
     } finally {

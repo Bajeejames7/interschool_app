@@ -34,8 +34,20 @@ export function createApp(webDir?: string) {
   // The built web app, with every other path going to index.html so links
   // like /p/rafiki/calendar work when opened directly.
   if (webDir && existsSync(webDir)) {
-    app.use(express.static(webDir, { index: false, maxAge: "1h" }));
+    // The start page must never be cached, so phones pick up a new version at
+    // once. Everything under assets/ has a content hash in its name and can be.
+    const noCache = (res: Response) => res.setHeader("Cache-Control", "no-cache");
+    app.use(
+      express.static(webDir, {
+        index: false,
+        maxAge: "1h",
+        setHeaders: (res, file) => {
+          if (file.endsWith(".html") || file.endsWith(".webmanifest")) noCache(res);
+        },
+      }),
+    );
     app.get(/^\/(?!api\/).*/, (_req, res) => {
+      noCache(res);
       res.sendFile(path.join(webDir, "index.html"));
     });
   }
