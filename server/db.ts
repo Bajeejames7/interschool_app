@@ -21,6 +21,7 @@ export function getPool(): pg.Pool {
     connectionString: url.toString(),
     ssl: local ? undefined : { rejectUnauthorized: false },
     max: 5,
+    connectionTimeoutMillis: 10000,
   });
   return shared;
 }
