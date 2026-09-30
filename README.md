@@ -71,3 +71,16 @@ web/src/           React app
   pages/           one file per screen
 tests/api.test.ts  what the API must do, written as tests
 ```
+
+## Android app
+
+`android/` is a small native app (a WebView) that opens the live web app, like the Base44 APK did. Everything else lives in the web app, so changes there reach phones without a new APK. The address is set by `APP_URL` in `android/app/build.gradle`.
+
+Build it with JDK 17 and the Android SDK:
+
+```bash
+cd android
+./gradlew assembleRelease    # → app/build/outputs/apk/release/app-release.apk
+```
+
+It is signed with the debug key so it installs straight from WhatsApp. For the Play Store, make a real upload key.
