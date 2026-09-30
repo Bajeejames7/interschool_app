@@ -23,14 +23,16 @@ function SignedIn({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   if (loading) return <Spinner />;
   if (!me) return <Navigate to="/signin" replace state={{ from: location.pathname }} />;
+  // An account made by a super admin starts on a temporary password.
+  if (me.mustChangePassword && location.pathname !== "/account") return <Navigate to="/account" replace />;
   return <>{children}</>;
 }
 
 function App() {
   return (
     <Routes>
-      <Route path="/signin" element={<AuthPage mode="signin" />} />
-      <Route path="/signup" element={<AuthPage mode="signup" />} />
+      <Route path="/signin" element={<AuthPage />} />
+      <Route path="/signup" element={<Navigate to="/signin" replace />} />
       <Route path="/" element={<SignedIn><SchoolsPage /></SignedIn>} />
       <Route path="/people" element={<SignedIn><PeoplePage /></SignedIn>} />
       <Route path="/account" element={<SignedIn><AccountPage /></SignedIn>} />

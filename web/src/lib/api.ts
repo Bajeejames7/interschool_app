@@ -68,9 +68,10 @@ export interface Me {
   id: number;
   email: string;
   name: string;
-  role: "user" | "admin";
-  isCreator: boolean;
+  role: "user" | "admin" | "superadmin";
+  isSuperAdmin: boolean;
   isAdmin: boolean;
+  mustChangePassword: boolean;
   coordinates: number[];
 }
 
@@ -158,8 +159,9 @@ export interface Person {
   id: number;
   email: string;
   name: string;
-  role: "user" | "admin";
-  isCreator: boolean;
+  role: "user" | "admin" | "superadmin";
+  isSuperAdmin: boolean;
+  pendingFirstSignIn: boolean;
   created_at: string;
   coordinates: { id: number; name: string }[];
 }

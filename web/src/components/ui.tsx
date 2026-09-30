@@ -48,7 +48,7 @@ export function TopBar({ left, title }: { left?: ReactNode; title?: ReactNode })
         )}
         <div className="min-w-0 flex-1 truncate font-display text-sm uppercase tracking-[0.12em]">{title}</div>
         {me?.isAdmin && (
-          <Link to="/people" aria-label={me.isCreator ? "Creator Control" : "People"} className="rounded-full p-2 hover:bg-white/10">
+          <Link to="/people" aria-label={me.isSuperAdmin ? "Creator Control" : "People"} className="rounded-full p-2 hover:bg-white/10">
             <ShieldCheck className="h-5 w-5" />
           </Link>
         )}

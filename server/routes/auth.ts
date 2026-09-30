@@ -15,23 +15,13 @@ import {
 
 export const authRoutes = Router();
 
-const email = z.string().trim().toLowerCase().email("Enter a valid email address").max(200);
-const password = z.string().min(8, "Password must be at least 8 characters").max(200);
+export const email = z.string().trim().toLowerCase().email("Enter a valid email address").max(200);
+export const password = z.string().min(8, "Password must be at least 8 characters").max(200);
 
-const SignUp = z.object({ name: z.string().trim().min(2, "Enter your name").max(80), email, password });
-
-// Email and password only. Every new account is a plain 'user'; nobody can
-// sign themselves up as an admin.
-authRoutes.post("/auth/signup", async (req, res) => {
-  const body = SignUp.parse(req.body);
-  const hash = await bcrypt.hash(body.password, 10);
-  const created = await one<{ id: number }>(
-    `INSERT INTO users (email, name, password_hash) VALUES ($1, $2, $3)
-     ON CONFLICT (lower(email)) DO NOTHING RETURNING id`,
-    [body.email, body.name, hash],
-  );
-  if (!created) throw new HttpError(409, "An account with this email already exists. Sign in instead.");
-  res.status(201).json({ token: issueToken(created.id), me: await loadMe(created.id) });
+// There is no public sign-up: Abel and James (super admins) create every
+// account from Creator Control (POST /users).
+authRoutes.post("/auth/signup", () => {
+  throw new HttpError(403, "Accounts are created by Abel or James. Ask them to add you.");
 });
 
 const SignIn = z.object({ email, password: z.string().min(1).max(200) });
@@ -65,6 +55,9 @@ authRoutes.post("/auth/password", requireUser, async (req, res) => {
   if (!row || !(await bcrypt.compare(body.current, row.password_hash))) {
     throw new HttpError(400, "Your current password is not right");
   }
-  await one("UPDATE users SET password_hash = $1 WHERE id = $2", [await bcrypt.hash(body.next, 10), user.id]);
+  await one("UPDATE users SET password_hash = $1, must_change_password = false WHERE id = $2", [
+    await bcrypt.hash(body.next, 10),
+    user.id,
+  ]);
   res.json({ ok: true });
 });

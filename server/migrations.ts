@@ -167,6 +167,17 @@ const migrations: { id: string; sql: string }[] = [
        '[]', '[]', '["Under 9","Under 11","Under 13"]');
     `,
   },
+  {
+    // Abel and James are super admins: the only people who create accounts.
+    // Public sign-up is gone; a new account must set its own password on
+    // first sign-in.
+    id: "003_super_admins",
+    sql: `
+      ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'admin', 'superadmin'));
+      ALTER TABLE users ADD COLUMN must_change_password boolean NOT NULL DEFAULT false;
+    `,
+  },
 ];
 
 export async function migrate(): Promise<void> {

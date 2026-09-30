@@ -3,14 +3,9 @@ import request from "supertest";
 import { createApp } from "../server/app.js";
 import { closePool, getPool } from "../server/db.js";
 import { migrate } from "../server/migrations.js";
+import bcrypt from "bcryptjs";
 
 const app = createApp();
-
-async function signUp(name: string, email: string) {
-  const res = await request(app).post("/api/auth/signup").send({ name, email, password: "password123" });
-  expect(res.status).toBe(201);
-  return { token: res.body.token as string, id: res.body.me.id as number, me: res.body.me };
-}
 
 const as = (token: string) => ({
   get: (url: string) => request(app).get(url).set("Authorization", `Bearer ${token}`),
@@ -20,50 +15,85 @@ const as = (token: string) => ({
   del: (url: string) => request(app).delete(url).set("Authorization", `Bearer ${token}`),
 });
 
-let creator: Awaited<ReturnType<typeof signUp>>;
-let admin: Awaited<ReturnType<typeof signUp>>;
-let coach: Awaited<ReturnType<typeof signUp>>;
-let coach2: Awaited<ReturnType<typeof signUp>>;
+async function signIn(email: string, password = "password123") {
+  const res = await request(app).post("/api/auth/login").send({ email, password });
+  expect(res.status).toBe(200);
+  return { token: res.body.token as string, id: res.body.me.id as number, me: res.body.me };
+}
+
+type Account = Awaited<ReturnType<typeof signIn>>;
+
+/** A super admin creates the account; the person signs in with the temporary password. */
+async function create(by: Account, name: string, email: string, role: "user" | "admin" = "user") {
+  const res = await as(by.token).post("/api/users", { name, email, password: "password123", role });
+  expect(res.status).toBe(201);
+  return signIn(email);
+}
+
+let superA: Account; // role 'superadmin', seeded straight into the database
+let superB: Account; // super admin through the CREATOR_EMAIL setting
+let admin: Account;
+let coach: Account;
+let coach2: Account;
 
 beforeAll(async () => {
   await getPool().query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   await migrate();
-  creator = await signUp("Abel Hazina", "Abel@Ambassadors.test"); // case differs from CREATOR_EMAIL on purpose
-  admin = await signUp("Ann Admin", "ann@example.com");
-  coach = await signUp("Carl Coach", "carl@example.com");
-  coach2 = await signUp("Dee Coach", "dee@example.com");
-  await as(creator.token).patch(`/api/users/${admin.id}/role`, { role: "admin" });
+  const hash = await bcrypt.hash("password123", 10);
+  // The second email's case differs from CREATOR_EMAIL on purpose.
+  await getPool().query(
+    `INSERT INTO users (email, name, password_hash, role) VALUES
+       ('abel.super@example.com', 'Abel Hazina', $1, 'superadmin'),
+       ('Abel@Ambassadors.test', 'James Bajee', $1, 'user')`,
+    [hash],
+  );
+  superA = await signIn("abel.super@example.com");
+  superB = await signIn("abel@ambassadors.test");
+  admin = await create(superA, "Ann Admin", "ann@example.com", "admin");
+  coach = await create(superA, "Carl Coach", "carl@example.com");
+  coach2 = await create(superB, "Dee Coach", "dee@example.com");
 });
 
 afterAll(async () => {
   await closePool();
 });
 
-describe("sign-up and sign-in", () => {
-  it("gives every new account the User role", () => {
-    expect(coach.me.role).toBe("user");
-    expect(coach.me.isAdmin).toBe(false);
-    expect(coach.me.isCreator).toBe(false);
+describe("accounts", () => {
+  it("has no public sign-up", async () => {
+    const res = await request(app).post("/api/auth/signup").send({ name: "Stranger", email: "x@example.com", password: "password123" });
+    expect(res.status).toBe(403);
   });
 
-  it("recognises the creator by email, whatever the case", () => {
-    expect(creator.me.isCreator).toBe(true);
-    expect(creator.me.isAdmin).toBe(true);
+  it("treats both the superadmin role and the CREATOR_EMAIL account as super admins", () => {
+    expect(superA.me.isSuperAdmin).toBe(true);
+    expect(superB.me.isSuperAdmin).toBe(true);
+    expect(superA.me.isAdmin).toBe(true);
+  });
+
+  it("creates coaches as Users who must choose their own password", () => {
+    expect(coach.me.role).toBe("user");
+    expect(coach.me.isAdmin).toBe(false);
+    expect(coach.me.isSuperAdmin).toBe(false);
+    expect(coach.me.mustChangePassword).toBe(true);
+  });
+
+  it("lets only super admins create accounts", async () => {
+    const body = { name: "New One", email: "new@example.com", password: "password123" };
+    expect((await as(admin.token).post("/api/users", body)).status).toBe(403);
+    expect((await as(coach.token).post("/api/users", body)).status).toBe(403);
   });
 
   it("refuses a second account with the same email", async () => {
-    const res = await request(app).post("/api/auth/signup").send({ name: "Carl Again", email: "CARL@example.com", password: "password123" });
+    const res = await as(superA.token).post("/api/users", { name: "Carl Again", email: "CARL@example.com", password: "password123" });
     expect(res.status).toBe(409);
   });
 
-  it("ignores a role sent with the sign-up", async () => {
-    const res = await request(app).post("/api/auth/signup").send({ name: "Sneaky", email: "sneaky@example.com", password: "password123", role: "admin" });
-    expect(res.body.me.role).toBe("user");
+  it("never creates a super admin through the app", async () => {
+    const res = await as(superA.token).post("/api/users", { name: "Sneaky", email: "sneaky@example.com", password: "password123", role: "superadmin" });
+    expect(res.status).toBe(400);
   });
 
   it("signs in with email and password", async () => {
-    const ok = await request(app).post("/api/auth/login").send({ email: "carl@example.com", password: "password123" });
-    expect(ok.status).toBe(200);
     const bad = await request(app).post("/api/auth/login").send({ email: "carl@example.com", password: "nope" });
     expect(bad.status).toBe(401);
   });
@@ -74,24 +104,25 @@ describe("sign-up and sign-in", () => {
 
   it("rejects a token with an edited user id", async () => {
     const parts = coach.token.split(".");
-    parts[0] = String(creator.id);
+    parts[0] = String(superA.id);
     expect((await as(parts.join(".")).get("/api/auth/me")).status).toBe(401);
   });
 
-  it("changes your own password only with the current one", async () => {
+  it("clears the first-sign-in flag once the person chooses a password", async () => {
     expect((await as(coach2.token).post("/api/auth/password", { current: "wrong", next: "newpassword1" })).status).toBe(400);
     expect((await as(coach2.token).post("/api/auth/password", { current: "password123", next: "newpassword1" })).status).toBe(200);
-    const login = await request(app).post("/api/auth/login").send({ email: "dee@example.com", password: "newpassword1" });
-    expect(login.status).toBe(200);
+    const again = await signIn("dee@example.com", "newpassword1");
+    expect(again.me.mustChangePassword).toBe(false);
   });
 });
 
 describe("Creator Control", () => {
-  it("lists users for admins and the creator only", async () => {
+  it("lists people for admins and super admins only", async () => {
     expect((await as(coach.token).get("/api/users")).status).toBe(403);
-    const list = await as(creator.token).get("/api/users");
+    const list = await as(admin.token).get("/api/users");
     expect(list.status).toBe(200);
-    expect(list.body.find((u: any) => u.id === creator.id).isCreator).toBe(true);
+    expect(list.body.find((u: any) => u.id === superA.id).isSuperAdmin).toBe(true);
+    expect(list.body.find((u: any) => u.id === coach.id).pendingFirstSignIn).toBe(true);
   });
 
   it("lets an admin make someone an admin", async () => {
@@ -100,12 +131,25 @@ describe("Creator Control", () => {
 
   it("does not let an admin take admin away from another admin", async () => {
     expect((await as(admin.token).patch(`/api/users/${coach2.id}/role`, { role: "user" })).status).toBe(403);
-    expect((await as(creator.token).patch(`/api/users/${coach2.id}/role`, { role: "user" })).status).toBe(200);
+    expect((await as(superA.token).patch(`/api/users/${coach2.id}/role`, { role: "user" })).status).toBe(200);
   });
 
-  it("never changes the creator", async () => {
-    expect((await as(admin.token).patch(`/api/users/${creator.id}/role`, { role: "user" })).status).toBe(400);
-    expect((await as(admin.token).post(`/api/users/${creator.id}/password`, { password: "hijacked123" })).status).toBe(403);
+  it("never changes a super admin, not even from the other super admin", async () => {
+    expect((await as(admin.token).patch(`/api/users/${superA.id}/role`, { role: "user" })).status).toBe(403);
+    expect((await as(superB.token).post(`/api/users/${superA.id}/password`, { password: "hijacked123" })).status).toBe(403);
+    expect((await as(superB.token).del(`/api/users/${superA.id}`)).status).toBe(403);
+  });
+
+  it("lets only super admins remove accounts", async () => {
+    const temp = await create(superA, "Temp Person", "temp@example.com");
+    expect((await as(admin.token).del(`/api/users/${temp.id}`)).status).toBe(403);
+    expect((await as(superB.token).del(`/api/users/${temp.id}`)).status).toBe(200);
+  });
+
+  it("puts a reset account back on first sign-in", async () => {
+    expect((await as(admin.token).post(`/api/users/${coach.id}/password`, { password: "temporary99" })).status).toBe(200);
+    expect((await signIn("carl@example.com", "temporary99")).me.mustChangePassword).toBe(true);
+    // The rest of the suite signs Carl in with the original token, which stays valid.
   });
 
   it("does not let a coach promote themselves", async () => {
@@ -168,7 +212,7 @@ describe("a session day", () => {
 
   it("stops a stale edit from overwriting a newer one", async () => {
     // The creator's screen still shows version 0; the admin already saved version 1.
-    const stale = await as(creator.token).put(`${url}/roles`, { version: 0, roles: [] });
+    const stale = await as(superA.token).put(`${url}/roles`, { version: 0, roles: [] });
     expect(stale.status).toBe(409);
     expect(stale.body.latest.version).toBe(1);
     expect(stale.body.latest.roles[0].assignee).toBe("Carl");

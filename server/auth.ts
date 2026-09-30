@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import { config } from "./config.js";
 import { one } from "./db.js";
 
-export type Role = "user" | "admin";
+export type Role = "user" | "admin" | "superadmin";
 
 export interface User {
   id: number;
@@ -14,8 +14,11 @@ export interface User {
 
 /** What the app is told about the signed-in person. */
 export interface Me extends User {
-  isCreator: boolean;
+  /** Abel and James: create accounts and have the final say over admins. */
+  isSuperAdmin: boolean;
   isAdmin: boolean;
+  /** Set on accounts a super admin created: choose your own password first. */
+  mustChangePassword: boolean;
   /** Program ids this person coordinates (admin for that program only). */
   coordinates: number[];
 }
@@ -56,21 +59,25 @@ export function readToken(token: string): number | null {
 
 // ---- who is asking ------------------------------------------------------------
 
-export function isCreatorEmail(email: string): boolean {
-  return config.creatorEmail !== "" && email.trim().toLowerCase() === config.creatorEmail;
+/**
+ * Super admins have role 'superadmin'. The CREATOR_EMAIL setting also counts,
+ * so there is always a way in even before any super admin exists.
+ */
+export function isSuperAdmin(user: { email: string; role: string }): boolean {
+  return user.role === "superadmin" || (config.creatorEmail !== "" && user.email.trim().toLowerCase() === config.creatorEmail);
 }
 
 export async function loadMe(userId: number): Promise<Me | null> {
-  const row = await one<User & { coordinates: number[] }>(
-    `SELECT u.id, u.email, u.name, u.role,
+  const row = await one<User & { coordinates: number[]; mustChangePassword: boolean }>(
+    `SELECT u.id, u.email, u.name, u.role, u.must_change_password AS "mustChangePassword",
             coalesce(array_agg(pa.program_id) FILTER (WHERE pa.program_id IS NOT NULL), '{}') AS coordinates
        FROM users u LEFT JOIN program_admins pa ON pa.user_id = u.id
       WHERE u.id = $1 GROUP BY u.id`,
     [userId],
   );
   if (!row) return null;
-  const isCreator = isCreatorEmail(row.email);
-  return { ...row, isCreator, isAdmin: isCreator || row.role === "admin" };
+  const superAdmin = isSuperAdmin(row);
+  return { ...row, isSuperAdmin: superAdmin, isAdmin: superAdmin || row.role === "admin" };
 }
 
 export function me(req: Request): Me {
@@ -93,6 +100,10 @@ export async function requireUser(req: Request, _res: Response, next: NextFuncti
 
 export function requireAdmin(user: Me): void {
   if (!user.isAdmin) throw new HttpError(403, "Only admins can do this");
+}
+
+export function requireSuperAdmin(user: Me): void {
+  if (!user.isSuperAdmin) throw new HttpError(403, "Only Abel and James (super admins) can do this");
 }
 
 /** Admins manage every program; a coordinator manages their own. */

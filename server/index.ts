@@ -12,7 +12,7 @@ const webDir = path.resolve(here, "../web");
 await migrate();
 createApp(webDir).listen(config.port, () => {
   console.log(`Interschool app listening on port ${config.port}`);
-  if (!config.creatorEmail) console.warn("CREATOR_EMAIL is not set: nobody can open Creator Control yet.");
+  if (!config.creatorEmail) console.warn("CREATOR_EMAIL is not set: only accounts with the superadmin role can create people.");
 });
 
 // Free hosting puts idle servers and databases to sleep. While the server is

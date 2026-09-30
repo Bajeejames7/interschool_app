@@ -6,7 +6,6 @@ interface AuthState {
   me: Me | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
   refresh: () => Promise<void>;
 }
@@ -58,14 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMe(res.me);
   };
 
-  const signUp = async (name: string, email: string, password: string) => {
-    const res = await api<{ token: string; me: Me }>("/auth/signup", { method: "POST", body: { name, email, password } });
-    setToken(res.token);
-    setMe(res.me);
-  };
-
   return (
-    <AuthContext.Provider value={{ me, loading, signIn, signUp, signOut, refresh }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ me, loading, signIn, signOut, refresh }}>{children}</AuthContext.Provider>
   );
 }
 
