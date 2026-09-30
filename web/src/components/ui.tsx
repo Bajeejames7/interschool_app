@@ -65,10 +65,10 @@ export function Page({ children }: { children: ReactNode }) {
 }
 
 export function Credit({ coordinator }: { coordinator?: string }) {
+  if (!coordinator) return null;
   return (
-    <footer className="mt-10 space-y-3 text-center font-display text-xs uppercase tracking-[0.2em] text-navy">
-      {coordinator && <p className="opacity-70">{coordinator} — Intramural Coordinator</p>}
-      <p>Created by Abel Hazina</p>
+    <footer className="mt-10 text-center font-display text-xs uppercase tracking-[0.2em] text-navy">
+      <p className="opacity-70">{coordinator} — Intramural Coordinator</p>
     </footer>
   );
 }
