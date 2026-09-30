@@ -365,10 +365,12 @@ function CoordinatorsSection() {
 
   return (
     <Section title="Coordinators" hint={`Coordinators can edit roles, schedules and this setup for ${program.name} only.`}>
-      {people.isPending ? (
-        <p className="text-sm text-muted">Loading people…</p>
-      ) : people.isError ? (
+      {people.data === undefined ? (
+        people.isError ? (
         <p className="text-sm text-bad">Could not load people.</p>
+        ) : (
+        <p className="text-sm text-muted">Loading people…</p>
+        )
       ) : (
         <div className="flex flex-wrap gap-2">
           {people.data.map((p) => (

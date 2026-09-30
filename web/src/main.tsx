@@ -1,13 +1,24 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import "./styles.css";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { queryClient } from "./lib/queries";
 import { BASE } from "./lib/base";
 import { UpdateWatcher } from "./lib/update";
 import { ConfirmProvider } from "./lib/confirm";
+import { SAVED_DATA_MAX_AGE, flushOutbox, onFlushed, persister } from "./lib/offline";
+
+// Once changes made offline have reached the server, reload what is shown.
+onFlushed(() => void queryClient.invalidateQueries());
+
+// Keep the app itself on the phone so it opens offline (web/sw-template.js).
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(`${BASE}sw.js`, { scope: BASE }).catch(() => {});
+  });
+}
 import { ProgramShell } from "./components/ProgramShell";
 import { Spinner } from "./components/ui";
 import { AuthPage } from "./pages/AuthPage";
@@ -53,7 +64,18 @@ function App() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: SAVED_DATA_MAX_AGE,
+        buster: "v1",
+        // Keep anything that has data, even if its latest refresh failed —
+        // that is exactly the moment (no connection) the saved copy is for.
+        dehydrateOptions: { shouldDehydrateQuery: (query) => query.state.data !== undefined },
+      }}
+      onSuccess={() => void flushOutbox()}
+    >
       <AuthProvider>
         <BrowserRouter basename={BASE.replace(/\/$/, "")}>
           <ConfirmProvider>
@@ -62,6 +84,6 @@ createRoot(document.getElementById("root")!).render(
           </ConfirmProvider>
         </BrowserRouter>
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>,
 );

@@ -125,10 +125,12 @@ function UpdatesBoard() {
       </form>
 
       <div className="mt-4 space-y-2.5">
-        {updates.isPending ? (
-          <Spinner />
-        ) : updates.isError ? (
+        {updates.data === undefined ? (
+          updates.isError ? (
           <ErrorNote error={updates.error} onRetry={() => updates.refetch()} />
+          ) : (
+          <Spinner />
+          )
         ) : updates.data.length === 0 ? (
           <p className="text-sm text-muted">No updates posted yet.</p>
         ) : (

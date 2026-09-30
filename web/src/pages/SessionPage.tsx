@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, ChevronLeft, ChevronRight, CircleCheck, Pencil, Plus, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
 import { ApiError, api, type AvailabilityOption, type Role, type ScheduleItem, type Session } from "../lib/api";
+import { enqueue } from "../lib/offline";
+import { useMe } from "../lib/auth";
 import { useProgramContext } from "../lib/program";
 import { keys, useSession } from "../lib/queries";
 import { WEEKDAYS, addDays, clock, longDate, timeAgo, weekdayOf } from "../lib/dates";
@@ -36,10 +38,12 @@ export function SessionPage() {
         </Link>
       </div>
 
-      {session.isPending ? (
-        <Spinner />
-      ) : session.isError ? (
+      {session.data === undefined ? (
+        session.isError ? (
         <ErrorNote error={session.error} onRetry={() => session.refetch()} />
+        ) : (
+        <Spinner />
+        )
       ) : (
         <div className="space-y-5">
           {!session.data.isSessionDay && (
@@ -66,6 +70,7 @@ export function SessionPage() {
 
 function AvailabilityCard({ date, session }: { date: string; session: Session }) {
   const program = useProgramContext();
+  const me = useMe();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,15 +79,26 @@ function AvailabilityCard({ date, session }: { date: string; session: Session })
   const choose = async (optionId: string | null) => {
     setSaving(optionId ?? "clear");
     setError(null);
+    const path = `/programs/${program.slug}/sessions/${date}/availability`;
+    const method = optionId ? "PUT" : "DELETE";
+    const body = optionId ? { optionId } : undefined;
     try {
-      await api(`/programs/${program.slug}/sessions/${date}/availability`, {
-        method: optionId ? "PUT" : "DELETE",
-        body: optionId ? { optionId } : undefined,
-      });
+      await api(path, { method, body });
       await queryClient.invalidateQueries({ queryKey: keys.session(program.slug, date) });
       void queryClient.invalidateQueries({ queryKey: ["month", program.slug] });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Not saved");
+      if (err instanceof ApiError && err.status === 0) {
+        // No connection: show the answer now and send it when back online.
+        enqueue({ path, method, body, label: `${day} check-in` });
+        queryClient.setQueryData<Session>(keys.session(program.slug, date), (s) => {
+          if (!s) return s;
+          const others = s.availability.filter((a) => a.userId !== me.id);
+          const mine = optionId ? [{ userId: me.id, name: me.name, optionId, updatedAt: new Date().toISOString() }] : [];
+          return { ...s, mine: optionId, availability: [...others, ...mine] };
+        });
+      } else {
+        setError(err instanceof Error ? err.message : "Not saved");
+      }
     } finally {
       setSaving(null);
     }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trophy } from "lucide-react";
-import { api, eventId, type Tally } from "../lib/api";
+import { ApiError, api, eventId, type Tally } from "../lib/api";
+import { enqueue } from "../lib/offline";
 import { useProgramContext } from "../lib/program";
 import { keys, useTally } from "../lib/queries";
 import { useConfirm } from "../lib/confirm";
@@ -48,15 +49,21 @@ export function TallyPage() {
     queryClient.setQueryData<Tally>(keys.tally(program.slug), (t) =>
       t && { ...t, teams: t.teams.map((team) => (team.id === teamId ? { ...team, points: team.points + amount } : team)) },
     );
+    const path = `/programs/${program.slug}/tally`;
+    const body = { teamId, category, amount, clientEventId: eventId() };
     try {
-      const fresh = await api<Tally>(`/programs/${program.slug}/tally`, {
-        method: "POST",
-        body: { teamId, category, amount, clientEventId: eventId() },
-      });
+      const fresh = await api<Tally>(path, { method: "POST", body });
       queryClient.setQueryData(keys.tally(program.slug), fresh);
     } catch (err) {
-      setError(err instanceof Error ? `Not saved: ${err.message}` : "Not saved");
-      await queryClient.invalidateQueries({ queryKey: keys.tally(program.slug) });
+      if (err instanceof ApiError && err.status === 0) {
+        // No connection: keep the point on this phone and send it later. The
+        // same id goes with it, so it can never be counted twice.
+        const team = program.teams.find((t) => t.id === teamId)?.name ?? teamId;
+        enqueue({ path, method: "POST", body, label: `${amount > 0 ? "+" : ""}${amount} ${team}` });
+      } else {
+        setError(err instanceof Error ? `Not saved: ${err.message}` : "Not saved");
+        await queryClient.invalidateQueries({ queryKey: keys.tally(program.slug) });
+      }
     } finally {
       setPending((n) => n - 1);
     }
@@ -77,8 +84,10 @@ export function TallyPage() {
     }
   };
 
-  if (tally.isPending) return <Page><Spinner /></Page>;
-  if (tally.isError) return <Page><ErrorNote error={tally.error} onRetry={() => tally.refetch()} /></Page>;
+  // Saved data first: offline, the last tally the phone saw is still shown.
+  if (tally.data === undefined) {
+    return <Page>{tally.isError ? <ErrorNote error={tally.error} onRetry={() => tally.refetch()} /> : <Spinner />}</Page>;
+  }
 
   const ranked = [...tally.data.teams].sort((a, b) => b.points - a.points);
   const top = Math.max(1, ...ranked.map((t) => t.points));

@@ -48,10 +48,12 @@ export function PeoplePage() {
         </div>
         {status && <Notice tone={status.tone}>{status.text}</Notice>}
 
-        {people.isPending ? (
-          <Spinner />
-        ) : people.isError ? (
+        {people.data === undefined ? (
+          people.isError ? (
           <ErrorNote error={people.error} onRetry={() => people.refetch()} />
+          ) : (
+          <Spinner />
+          )
         ) : (
           <>
             <p className="mt-4 text-xs font-bold uppercase tracking-wider text-muted">

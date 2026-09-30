@@ -32,10 +32,12 @@ export function SchoolsPage() {
         </div>
       </div>
       <Page>
-        {programs.isPending ? (
-          <Spinner />
-        ) : programs.isError ? (
+        {programs.data === undefined ? (
+          programs.isError ? (
           <ErrorNote error={programs.error} onRetry={() => programs.refetch()} />
+          ) : (
+          <Spinner />
+          )
         ) : (
           <div className="-mt-10 space-y-6">
             {me.isAdmin && (

@@ -15,8 +15,12 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: "always",
       refetchOnReconnect: "always",
       staleTime: 0,
+      // Kept for a week so the saved copy survives the app being closed.
+      gcTime: 7 * 24 * 60 * 60 * 1000,
       retry: (count, err: any) => err?.status !== 401 && err?.status !== 403 && err?.status !== 404 && count < 2,
     },
+    // Data restored from the saved copy lives as long as freshly loaded data.
+    hydrate: { queries: { gcTime: 7 * 24 * 60 * 60 * 1000 } },
   },
 });
 

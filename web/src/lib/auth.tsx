@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { api, getToken, handleSignedOut, setToken, type Me } from "./api";
+import { ApiError, api, getStoredMe, getToken, handleSignedOut, setStoredMe, setToken, type Me } from "./api";
+import { clearOffline } from "./offline";
 
 interface AuthState {
   me: Me | null;
@@ -15,26 +16,35 @@ interface AuthState {
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [me, setMe] = useState<Me | null>(null);
-  const [loading, setLoading] = useState(Boolean(getToken()));
+  // Start from the saved copy so the app opens straight away, offline too;
+  // the server's answer replaces it a moment later.
+  const [me, setMeState] = useState<Me | null>(() => (getToken() ? getStoredMe() : null));
+  const [loading, setLoading] = useState(() => Boolean(getToken()) && !getStoredMe());
+  const setMe = useCallback((next: Me | null) => {
+    setStoredMe(next);
+    setMeState(next);
+  }, []);
   const queryClient = useQueryClient();
 
   const signOut = useCallback(() => {
     setToken(null);
     setMe(null);
     queryClient.clear();
-  }, [queryClient]);
+    clearOffline(); // this phone's saved data and unsent changes were theirs
+  }, [queryClient, setMe]);
 
   const refresh = useCallback(async () => {
     if (!getToken()) return;
     try {
       setMe(await api<Me>("/auth/me"));
-    } catch {
-      /* offline or signed out; signed-out is handled below */
+    } catch (err) {
+      // Offline: keep the saved copy. Signed out (401) is handled by
+      // handleSignedOut below.
+      if (!(err instanceof ApiError) || err.status !== 0) console.warn(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setMe]);
 
   useEffect(() => {
     handleSignedOut(signOut);
@@ -60,7 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const passwordSet = useCallback(() => {
-    setMe((current) => current && { ...current, mustChangePassword: false });
+    setMeState((current) => {
+      const next = current && { ...current, mustChangePassword: false };
+      setStoredMe(next);
+      return next;
+    });
   }, []);
 
   return (

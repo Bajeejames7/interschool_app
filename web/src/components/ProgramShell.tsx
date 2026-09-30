@@ -33,12 +33,14 @@ export function ProgramShell() {
         }
         title={program.data?.name}
       />
-      {program.isPending ? (
-        <Spinner />
-      ) : program.isError ? (
+      {program.data === undefined ? (
+        program.isError ? (
         <div className="mx-auto max-w-2xl p-4">
           <ErrorNote error={program.error} onRetry={() => program.refetch()} />
         </div>
+        ) : (
+        <Spinner />
+        )
       ) : (
         <Outlet context={program.data} />
       )}

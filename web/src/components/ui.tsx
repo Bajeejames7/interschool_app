@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { CircleUserRound, LoaderCircle, ShieldCheck } from "lucide-react";
+import { CircleUserRound, CloudOff, LoaderCircle, RefreshCw, ShieldCheck } from "lucide-react";
+import { useConnection } from "../lib/offline";
 import { useAuth } from "../lib/auth";
 import { asset, imageSrc } from "../lib/base";
 
@@ -56,7 +57,24 @@ export function TopBar({ left, title }: { left?: ReactNode; title?: ReactNode })
           <CircleUserRound className="h-5 w-5" />
         </Link>
       </div>
+      <ConnectionBar />
     </header>
+  );
+}
+
+/** Shown under the top bar when there is no connection, or changes are waiting to sync. */
+function ConnectionBar() {
+  const { online, lastSync, waiting } = useConnection();
+  if (online && waiting === 0) return null;
+  const changes = waiting === 1 ? "1 change" : `${waiting} changes`;
+  const saved = new Date(lastSync).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return (
+    <div role="status" className={`flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold ${online ? "bg-brand" : "bg-amber-500 text-navy"}`}>
+      {online ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <CloudOff className="h-3.5 w-3.5" />}
+      {online
+        ? `Syncing ${changes}…`
+        : `Offline — showing what was saved at ${saved}${waiting ? ` · ${changes} will sync when you are back online` : ""}`}
+    </div>
   );
 }
 

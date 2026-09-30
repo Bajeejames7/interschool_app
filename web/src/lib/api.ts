@@ -1,9 +1,11 @@
 import { BASE } from "./base";
+import { reportConnection } from "./offline";
 
 // Talking to the server. The login token lives in localStorage so a coach
 // stays signed in on their phone.
 
 const TOKEN_KEY = "ambassadors.token";
+const ME_KEY = "ambassadors.me";
 
 export function getToken(): string | null {
   try {
@@ -19,6 +21,24 @@ export function setToken(token: string | null): void {
     else localStorage.removeItem(TOKEN_KEY);
   } catch {
     /* private mode: the session lasts until the tab closes */
+  }
+}
+
+/** Who is signed in, kept so the app can open offline without asking the server. */
+export function getStoredMe(): Me | null {
+  try {
+    return JSON.parse(localStorage.getItem(ME_KEY) ?? "null");
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredMe(me: Me | null): void {
+  try {
+    if (me) localStorage.setItem(ME_KEY, JSON.stringify(me));
+    else localStorage.removeItem(ME_KEY);
+  } catch {
+    /* private mode */
   }
 }
 
@@ -47,8 +67,10 @@ export async function api<T = any>(path: string, init: { method?: string; body?:
       body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
     });
   } catch {
+    reportConnection(false);
     throw new ApiError(0, "No connection. Check your internet and try again.", null);
   }
+  reportConnection(true);
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     if (res.status === 401 && token && !path.startsWith("/auth/login")) onSignedOut();

@@ -42,7 +42,7 @@ export function createApp(webDir?: string) {
         index: false,
         maxAge: "1h",
         setHeaders: (res, file) => {
-          if (/\.(html|webmanifest|json)$/.test(file)) noCache(res);
+          if (/\.(html|webmanifest|json)$/.test(file) || file.endsWith("sw.js")) noCache(res);
         },
       }),
     );
