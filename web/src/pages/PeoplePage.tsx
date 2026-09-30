@@ -5,6 +5,7 @@ import { KeyRound, Search, Trash2, UserPlus } from "lucide-react";
 import { api, type Person } from "../lib/api";
 import { useMe } from "../lib/auth";
 import { keys, usePeople } from "../lib/queries";
+import { useConfirm } from "../lib/confirm";
 import { ErrorNote, Notice, Page, Spinner, TopBar } from "../components/ui";
 
 type Status = { tone: "good" | "bad"; text: string } | null;
@@ -125,6 +126,7 @@ function AddPerson({ onStatus }: { onStatus: (s: Status) => void }) {
 function PersonRow({ person, onStatus }: { person: Person; onStatus: (s: Status) => void }) {
   const me = useMe();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [password, setPassword] = useState("");
@@ -157,9 +159,14 @@ function PersonRow({ person, onStatus }: { person: Person; onStatus: (s: Status)
       setPassword("");
     }, `Temporary password set for ${person.name}. Tell them; they choose a new one when they sign in.`);
 
-  const remove = () => {
-    if (!window.confirm(`Remove ${person.name}'s account? Their check-ins and posts go with it.`)) return;
-    void run(() => api(`/users/${person.id}`, { method: "DELETE" }), `${person.name} was removed.`);
+  const remove = async () => {
+    const ok = await confirm({
+      title: `Remove ${person.name}?`,
+      message: "Their account, check-ins and posts are deleted. This cannot be undone.",
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (ok) await run(() => api(`/users/${person.id}`, { method: "DELETE" }), `${person.name} was removed.`);
   };
 
   return (

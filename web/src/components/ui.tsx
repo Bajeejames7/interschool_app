@@ -82,11 +82,21 @@ export function SchoolBadge({ program, size = 44 }: { program: { logo: string; s
   );
 }
 
-export function Credit({ coordinator }: { coordinator?: string }) {
-  if (!coordinator) return null;
+type Coordinated = { coordinatorName: string; coordinatorTitle: string; kind: "intramural" | "club" };
+
+/** "Kate Agosa — Intramural Coordinator", using the school's own title if it has one. */
+export function coordinatorLine(program: Coordinated): string | null {
+  if (!program.coordinatorName) return null;
+  const title = program.coordinatorTitle || (program.kind === "club" ? "Club Coordinator" : "Intramural Coordinator");
+  return `${program.coordinatorName} — ${title}`;
+}
+
+export function Credit({ program }: { program?: Coordinated }) {
+  const line = program && coordinatorLine(program);
+  if (!line) return null;
   return (
     <footer className="mt-10 text-center font-display text-xs uppercase tracking-[0.2em] text-navy">
-      <p className="opacity-70">{coordinator} — Intramural Coordinator</p>
+      <p className="opacity-70">{line}</p>
     </footer>
   );
 }

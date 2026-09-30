@@ -1,6 +1,7 @@
 package org.ambassadorsfootball.interschool;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -9,6 +10,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.webkit.JsResult;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -28,6 +32,7 @@ import android.widget.TextView;
 public class MainActivity extends Activity {
 
     private static final String APP_URL = BuildConfig.APP_URL;
+    private static final int PICK_FILE = 1;
     private static final Uri APP = Uri.parse(APP_URL);
 
     private WebView web;
@@ -36,6 +41,7 @@ public class MainActivity extends Activity {
     private TextView message;
     private Button retry;
     private boolean firstPageShown = false;
+    private ValueCallback<Uri[]> pendingUpload;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     // Render's free servers sleep when idle; say so if loading takes a while.
@@ -89,6 +95,44 @@ public class MainActivity extends Activity {
             }
         });
 
+        // Without this, a web page's "Are you sure?" and file pickers (the logo
+        // upload in Setup) silently do nothing inside an Android WebView.
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onJsAlert(WebView view, String url, String text, JsResult result) {
+                new AlertDialog.Builder(MainActivity.this)
+                        .setMessage(text)
+                        .setPositiveButton("OK", (d, w) -> result.confirm())
+                        .setOnCancelListener(d -> result.cancel())
+                        .show();
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String text, JsResult result) {
+                new AlertDialog.Builder(MainActivity.this)
+                        .setMessage(text)
+                        .setPositiveButton("OK", (d, w) -> result.confirm())
+                        .setNegativeButton("Cancel", (d, w) -> result.cancel())
+                        .setOnCancelListener(d -> result.cancel())
+                        .show();
+                return true;
+            }
+
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (pendingUpload != null) pendingUpload.onReceiveValue(null);
+                pendingUpload = callback;
+                try {
+                    startActivityForResult(params.createIntent(), PICK_FILE);
+                } catch (ActivityNotFoundException e) {
+                    pendingUpload = null;
+                    return false;
+                }
+                return true;
+            }
+        });
+
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
             firstPageShown = true;
@@ -133,6 +177,14 @@ public class MainActivity extends Activity {
         } catch (ActivityNotFoundException ignored) {
             // No app can open it; nothing sensible to do.
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != PICK_FILE || pendingUpload == null) return;
+        pendingUpload.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+        pendingUpload = null;
     }
 
     @Override

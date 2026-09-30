@@ -3,7 +3,7 @@ import { ArrowRight, CalendarCheck, Users } from "lucide-react";
 import { useProgramContext } from "../lib/program";
 import { useSession } from "../lib/queries";
 import { WEEKDAYS, longDate } from "../lib/dates";
-import { Credit, Page, SchoolBadge } from "../components/ui";
+import { Credit, Page, SchoolBadge, coordinatorLine } from "../components/ui";
 import { asset } from "../lib/base";
 
 export function ProgramHome() {
@@ -37,10 +37,8 @@ export function ProgramHome() {
           <Link to="session" className="btn mt-6 bg-white px-6 py-3.5 text-navy">
             {mine ? `You said: ${mine.label}` : `Confirm ${day} availability`} <ArrowRight className="h-4 w-4" />
           </Link>
-          {program.coordinatorName && (
-            <p className="mt-8 font-display text-xs uppercase tracking-[0.2em] text-white/80">
-              {program.coordinatorName} — {program.kind === "club" ? "Club" : "Intramural"} Coordinator
-            </p>
+          {coordinatorLine(program) && (
+            <p className="mt-8 font-display text-xs uppercase tracking-[0.2em] text-white/80">{coordinatorLine(program)}</p>
           )}
         </div>
       </section>
@@ -75,7 +73,7 @@ export function ProgramHome() {
             <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed">{program.notes}</p>
           </div>
         )}
-        <Credit />
+        <Credit program={program} />
       </Page>
     </>
   );

@@ -190,6 +190,29 @@ const migrations: { id: string; sql: string }[] = [
       UPDATE programs SET logo = 'logos/rosslyn.png'   WHERE slug = 'rosslyn';
     `,
   },
+  {
+    // What each school calls its coordinator ("School Sports Coordinator" at
+    // Daniels). Empty means the default for the kind of program. Plus the
+    // details Abel sent on 2026-10-01, each only where the field was still
+    // untouched, so nothing edited in Setup is overwritten.
+    id: "005_coordinator_titles_and_school_details",
+    sql: `
+      ALTER TABLE programs ADD COLUMN coordinator_title text NOT NULL DEFAULT '';
+
+      UPDATE programs SET coordinator_title = 'Intramural Coordinator'
+       WHERE slug = 'rosslyn' AND coordinator_title = '';
+      UPDATE programs SET default_schedule =
+        '[{"time":"09:30","activity":"Session starts"},{"time":"11:30","activity":"Session ends"}]'
+       WHERE slug = 'rosslyn' AND default_schedule = '[]'::jsonb;
+
+      UPDATE programs SET coordinator_title = 'School Sports Coordinator'
+       WHERE slug = 'daniels' AND coordinator_title = '';
+      UPDATE programs SET notes =
+        'Felix Mwendwa manages school-based football engagement at the Daniels School.' || E'\\n\\n' ||
+        'Activities: coaching sessions, skill development drills, and character mentoring integrated with sports.'
+       WHERE slug = 'daniels' AND notes = 'Requirements to be added after the survey.';
+    `,
+  },
 ];
 
 export async function migrate(): Promise<void> {

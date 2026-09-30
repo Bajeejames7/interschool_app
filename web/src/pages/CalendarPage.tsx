@@ -74,7 +74,7 @@ export function CalendarPage() {
       </section>
 
       <UpdatesBoard />
-      <Credit coordinator={program.coordinatorName || undefined} />
+      <Credit program={program} />
     </Page>
   );
 }

@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api, type Program } from "../lib/api";
 import { useMe } from "../lib/auth";
 import { keys, usePrograms } from "../lib/queries";
-import { Credit, ErrorNote, Notice, Page, SchoolBadge, Spinner, TopBar } from "../components/ui";
+import { ErrorNote, Notice, Page, SchoolBadge, Spinner, TopBar } from "../components/ui";
 
 const GROUPS: { kind: Program["kind"]; title: string }[] = [
   { kind: "intramural", title: "Intramurals" },
@@ -83,7 +83,6 @@ export function SchoolsPage() {
               ))}
           </div>
         )}
-        <Credit />
       </Page>
     </>
   );

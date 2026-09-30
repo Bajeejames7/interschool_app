@@ -11,7 +11,7 @@ import { Notice, Page, SchoolBadge } from "../components/ui";
 
 type Draft = Pick<
   Program,
-  | "name" | "shortCode" | "color" | "coordinatorName" | "tagline" | "notes" | "sessionWeekday"
+  | "name" | "shortCode" | "color" | "coordinatorName" | "coordinatorTitle" | "tagline" | "notes" | "sessionWeekday"
   | "availabilityOptions" | "defaultRoles" | "defaultSchedule" | "teams" | "categories" | "kind" | "archived" | "logo"
 >;
 
@@ -46,6 +46,7 @@ export function SettingsPage() {
     shortCode: program.shortCode,
     color: program.color,
     coordinatorName: program.coordinatorName,
+    coordinatorTitle: program.coordinatorTitle,
     tagline: program.tagline,
     notes: program.notes,
     sessionWeekday: program.sessionWeekday,
@@ -138,6 +139,14 @@ export function SettingsPage() {
           </div>
           <Field label="Coordinator's name (shown on the pages)">
             <input className="field" value={draft.coordinatorName} onChange={(e) => set("coordinatorName", e.target.value)} placeholder="e.g. Denilson Mwenjwa" />
+          </Field>
+          <Field label="Coordinator's title">
+            <input
+              className="field"
+              value={draft.coordinatorTitle}
+              onChange={(e) => set("coordinatorTitle", e.target.value)}
+              placeholder={draft.kind === "club" ? "Club Coordinator" : "Intramural Coordinator"}
+            />
           </Field>
           <Field label="Tagline"><input className="field" value={draft.tagline} onChange={(e) => set("tagline", e.target.value)} /></Field>
           <Field label="Session day">

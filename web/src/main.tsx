@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import { queryClient } from "./lib/queries";
 import { BASE } from "./lib/base";
 import { UpdateWatcher } from "./lib/update";
+import { ConfirmProvider } from "./lib/confirm";
 import { ProgramShell } from "./components/ProgramShell";
 import { Spinner } from "./components/ui";
 import { AuthPage } from "./pages/AuthPage";
@@ -55,8 +56,10 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter basename={BASE.replace(/\/$/, "")}>
-          <UpdateWatcher />
-          <App />
+          <ConfirmProvider>
+            <UpdateWatcher />
+            <App />
+          </ConfirmProvider>
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>

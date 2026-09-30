@@ -57,7 +57,7 @@ export function SessionPage() {
           )}
         </div>
       )}
-      <Credit coordinator={program.coordinatorName || undefined} />
+      <Credit program={program} />
     </Page>
   );
 }

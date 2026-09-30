@@ -40,6 +40,7 @@ const Settings = z.object({
   shortCode: text(4).transform((s) => s.toUpperCase()),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   coordinatorName: z.string().trim().max(80),
+  coordinatorTitle: z.string().trim().max(60),
   tagline: z.string().trim().max(80),
   notes: z.string().trim().max(5000),
   sessionWeekday: z.number().int().min(0).max(6),
@@ -66,6 +67,7 @@ export interface ProgramRow {
   kind: "intramural" | "club";
   color: string;
   coordinator_name: string;
+  coordinator_title: string;
   tagline: string;
   notes: string;
   session_weekday: number;
@@ -94,6 +96,7 @@ function present(p: ProgramRow) {
     kind: p.kind,
     color: p.color,
     coordinatorName: p.coordinator_name,
+    coordinatorTitle: p.coordinator_title,
     tagline: p.tagline,
     notes: p.notes,
     sessionWeekday: p.session_weekday,
@@ -193,6 +196,7 @@ programRoutes.patch("/programs/:slug", async (req, res) => {
     short_code: body.shortCode,
     color: body.color,
     coordinator_name: body.coordinatorName,
+    coordinator_title: body.coordinatorTitle,
     tagline: body.tagline,
     notes: body.notes,
     session_weekday: body.sessionWeekday,

@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 import { api, eventId, type Tally } from "../lib/api";
 import { useProgramContext } from "../lib/program";
 import { keys, useTally } from "../lib/queries";
+import { useConfirm } from "../lib/confirm";
 import { timeAgo } from "../lib/dates";
 import { Credit, ErrorNote, Notice, Page, Spinner } from "../components/ui";
 
@@ -13,6 +14,7 @@ export function TallyPage() {
   const program = useProgramContext();
   const tally = useTally(program.slug);
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const storageKey = `ambassadors.category.${program.slug}`;
   const [category, setCategory] = useState(() => {
     try {
@@ -61,7 +63,13 @@ export function TallyPage() {
   };
 
   const reset = async () => {
-    if (!window.confirm("Reset all points to 0 for everyone? The history is kept.")) return;
+    const ok = await confirm({
+      title: "Reset all points?",
+      message: "Every team goes back to 0 on all phones. The history of tallies is kept.",
+      confirmLabel: "Reset",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       queryClient.setQueryData(keys.tally(program.slug), await api<Tally>(`/programs/${program.slug}/tally/reset`, { method: "POST" }));
     } catch (err) {
@@ -170,7 +178,7 @@ export function TallyPage() {
           </ul>
         )}
       </section>
-      <Credit coordinator={program.coordinatorName || undefined} />
+      <Credit program={program} />
     </Page>
   );
 }

@@ -98,6 +98,8 @@ export interface Program {
   kind: "intramural" | "club";
   color: string;
   coordinatorName: string;
+  /** e.g. "School Sports Coordinator"; empty means the default for the kind. */
+  coordinatorTitle: string;
   tagline: string;
   notes: string;
   sessionWeekday: number;
