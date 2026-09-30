@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CircleUserRound, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useAuth } from "../lib/auth";
-import { asset } from "../lib/base";
+import { asset, imageSrc } from "../lib/base";
 
 export function Spinner({ label = "Loading…" }: { label?: string }) {
   return (
@@ -68,7 +68,7 @@ export function Page({ children }: { children: ReactNode }) {
 export function SchoolBadge({ program, size = 44 }: { program: { logo: string; shortCode: string; color: string; name: string }; size?: number }) {
   const style = { width: size, height: size };
   if (program.logo) {
-    const src = program.logo.startsWith("data:") ? program.logo : asset(program.logo);
+    const src = imageSrc(program.logo);
     return (
       <span className="grid shrink-0 place-items-center overflow-hidden rounded-xl bg-white p-1" style={style}>
         <img src={src} alt={`${program.name} logo`} className="h-full w-full object-contain" />

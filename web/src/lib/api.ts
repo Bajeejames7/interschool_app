@@ -111,6 +111,8 @@ export interface Program {
   archived: boolean;
   /** "logos/x.png" shipped with the app, an uploaded data: URL, or "" for initials. */
   logo: string;
+  /** "backgrounds/x.jpg" shipped with the app, an uploaded data: URL, or "" for the default photo. */
+  background: string;
   canManage: boolean;
 }
 

@@ -12,7 +12,7 @@ import { userRoutes } from "./routes/users.js";
 export function createApp(webDir?: string) {
   const app = express();
   app.set("trust proxy", 1); // Render sits in front; req.ip is the phone's address
-  app.use(express.json({ limit: "200kb" }));
+  app.use(express.json({ limit: "1mb" })); // room for an uploaded logo and photo
 
   const api = express.Router();
   api.get("/health", (_req, res) => {

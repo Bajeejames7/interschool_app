@@ -34,8 +34,19 @@ const Logo = z
     "Upload a PNG, JPG or WebP image",
   );
 
+// A background photo: shipped with the app, or uploaded (shrunk on the phone
+// to 1280px JPEG first, so a few hundred KB at most).
+const Background = z
+  .string()
+  .max(900_000, "That photo is too large; use a smaller image")
+  .refine(
+    (v) => v === "" || /^backgrounds\/[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/.test(v) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v),
+    "Upload a JPG, PNG or WebP photo",
+  );
+
 const Settings = z.object({
   logo: Logo,
+  background: Background,
   name: text(60),
   shortCode: text(4).transform((s) => s.toUpperCase()),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -79,6 +90,7 @@ export interface ProgramRow {
   archived: boolean;
   position: number;
   logo: string;
+  background: string;
 }
 
 export async function findProgram(slug: string | string[] | undefined): Promise<ProgramRow> {
@@ -107,6 +119,7 @@ function present(p: ProgramRow) {
     categories: p.categories,
     archived: p.archived,
     logo: p.logo,
+    background: p.background,
   };
 }
 
@@ -192,6 +205,7 @@ programRoutes.patch("/programs/:slug", async (req, res) => {
 
   const columns: Record<string, unknown> = {
     logo: body.logo,
+    background: body.background,
     name: body.name,
     short_code: body.shortCode,
     color: body.color,

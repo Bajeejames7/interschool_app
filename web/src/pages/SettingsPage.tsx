@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { api, type AvailabilityOption, type Program, type ScheduleItem, type Team } from "../lib/api";
 import { useMe } from "../lib/auth";
 import { useProgramContext } from "../lib/program";
+import { imageSrc } from "../lib/base";
 import { keys, usePeople } from "../lib/queries";
 import { WEEKDAYS } from "../lib/dates";
 import { Notice, Page, SchoolBadge } from "../components/ui";
@@ -12,11 +13,11 @@ import { Notice, Page, SchoolBadge } from "../components/ui";
 type Draft = Pick<
   Program,
   | "name" | "shortCode" | "color" | "coordinatorName" | "coordinatorTitle" | "tagline" | "notes" | "sessionWeekday"
-  | "availabilityOptions" | "defaultRoles" | "defaultSchedule" | "teams" | "categories" | "kind" | "archived" | "logo"
+  | "availabilityOptions" | "defaultRoles" | "defaultSchedule" | "teams" | "categories" | "kind" | "archived" | "logo" | "background"
 >;
 
-/** Shrink an uploaded image to at most 256×256 so it stays small in the database. */
-async function shrinkImage(file: File): Promise<string> {
+/** Shrink an uploaded image so it stays small in the database: logos to 256px PNG, photos to 1280px JPEG. */
+async function shrinkImage(file: File, max = 256, type: "image/png" | "image/jpeg" = "image/png"): Promise<string> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -25,12 +26,12 @@ async function shrinkImage(file: File): Promise<string> {
       i.onerror = () => reject(new Error("That file is not an image"));
       i.src = url;
     });
-    const scale = Math.min(1, 256 / Math.max(img.width, img.height));
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(img.width * scale);
     canvas.height = Math.round(img.height * scale);
     canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/png");
+    return type === "image/jpeg" ? canvas.toDataURL(type, 0.78) : canvas.toDataURL(type);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -58,6 +59,7 @@ export function SettingsPage() {
     kind: program.kind,
     archived: program.archived,
     logo: program.logo,
+    background: program.background,
   }));
   const [status, setStatus] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -128,6 +130,36 @@ export function SettingsPage() {
                 <button className="btn-ghost text-bad" onClick={() => set("logo", "")}>Remove</button>
               )}
             </div>
+          </div>
+        </Section>
+
+        <Section title="Background photo" hint="Shown behind the top of this school's home page. A wide sports photo works best.">
+          <div
+            className="h-32 rounded-2xl bg-navy bg-cover bg-center ring-1 ring-line"
+            style={{ backgroundImage: `url(${imageSrc(draft.background || "backgrounds/rafiki.jpg")})` }}
+          />
+          <div className="flex flex-wrap gap-2">
+            <label className="btn-ghost cursor-pointer">
+              Upload photo
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  try {
+                    set("background", await shrinkImage(file, 1280, "image/jpeg"));
+                  } catch (err) {
+                    setStatus({ tone: "bad", text: err instanceof Error ? err.message : "Could not read that image" });
+                  }
+                }}
+              />
+            </label>
+            {draft.background && (
+              <button className="btn-ghost text-bad" onClick={() => set("background", "")}>Use the default photo</button>
+            )}
           </div>
         </Section>
 

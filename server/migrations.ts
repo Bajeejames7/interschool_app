@@ -213,6 +213,18 @@ const migrations: { id: string; sql: string }[] = [
        WHERE slug = 'daniels' AND notes = 'Requirements to be added after the survey.';
     `,
   },
+  {
+    // Each school's own photo behind its home page: a file shipped with the
+    // app ("backgrounds/x.jpg") or one uploaded from Setup (a data: URL).
+    id: "006_program_backgrounds",
+    sql: `
+      ALTER TABLE programs ADD COLUMN background text NOT NULL DEFAULT '';
+      UPDATE programs SET background = 'backgrounds/rafiki.jpg'    WHERE slug = 'rafiki';
+      UPDATE programs SET background = 'backgrounds/daniels.jpg'   WHERE slug = 'daniels';
+      UPDATE programs SET background = 'backgrounds/icc-imara.jpg' WHERE slug = 'icc-imara';
+      UPDATE programs SET background = 'backgrounds/rosslyn.jpg'   WHERE slug = 'rosslyn';
+    `,
+  },
 ];
 
 export async function migrate(): Promise<void> {

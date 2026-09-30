@@ -4,6 +4,7 @@ import { ChevronRight, Plus, ShieldCheck } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, type Program } from "../lib/api";
 import { useMe } from "../lib/auth";
+import { asset } from "../lib/base";
 import { keys, usePrograms } from "../lib/queries";
 import { ErrorNote, Notice, Page, SchoolBadge, Spinner, TopBar } from "../components/ui";
 
@@ -20,7 +21,10 @@ export function SchoolsPage() {
   return (
     <>
       <TopBar title="Ambassadors Football" />
-      <div className="bg-navy px-4 pb-10 pt-4 text-white">
+      <div
+        className="bg-navy bg-cover bg-center px-4 pb-14 pt-6 text-white"
+        style={{ backgroundImage: `linear-gradient(rgba(22,34,79,.78), rgba(22,34,79,.92)), url(${asset("backgrounds/cover.jpg")})` }}
+      >
         <div className="mx-auto max-w-2xl">
           <p className="font-display text-xs uppercase tracking-[0.2em] text-sky-300">Football. Faith. Future.</p>
           <h1 className="mt-2 font-display text-3xl">Hello, {me.name.split(" ")[0]}</h1>

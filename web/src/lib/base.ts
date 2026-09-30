@@ -4,3 +4,6 @@ export const BASE = import.meta.env.BASE_URL;
 
 /** A file from web/public, e.g. asset("logo.jpg"). */
 export const asset = (file: string) => `${BASE}${file}`;
+
+/** A stored image: an uploaded data: URL as it is, a shipped file via asset(). */
+export const imageSrc = (value: string) => (value.startsWith("data:") ? value : asset(value));

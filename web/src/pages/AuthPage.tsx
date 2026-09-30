@@ -38,7 +38,7 @@ export function AuthPage() {
     <div className="min-h-screen bg-navy">
       <div
         className="relative flex h-72 flex-col justify-end bg-cover bg-center px-6 pb-8 text-white"
-        style={{ backgroundImage: `linear-gradient(to top, #16224f 5%, rgba(22,34,79,.35)), url(${asset("hero.jpg")})` }}
+        style={{ backgroundImage: `linear-gradient(to top, #16224f 5%, rgba(22,34,79,.35)), url(${asset("backgrounds/cover.jpg")})` }}
       >
         <img src={asset("logo.jpg")} alt="Ambassadors Football" className="mb-4 h-16 w-16 rounded-xl" />
         <h1 className="font-display text-3xl leading-tight">Show up ready.<br />Serve together.</h1>
