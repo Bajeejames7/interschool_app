@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth, useMe } from "../lib/auth";
 import { Notice, Page, TopBar } from "../components/ui";
@@ -7,6 +8,7 @@ import { Notice, Page, TopBar } from "../components/ui";
 export function AccountPage() {
   const me = useMe();
   const { signOut, refresh } = useAuth();
+  const navigate = useNavigate();
   const firstSignIn = me.mustChangePassword;
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -23,6 +25,8 @@ export function AccountPage() {
       setNext("");
       setStatus({ tone: "good", text: "Password changed." });
       await refresh(); // lifts the first-sign-in lock
+      // First sign-in done: on to the schools.
+      if (firstSignIn) navigate("/", { replace: true });
     } catch (err) {
       setStatus({ tone: "bad", text: err instanceof Error ? err.message : "Not changed" });
     } finally {
@@ -36,6 +40,11 @@ export function AccountPage() {
     <>
       <TopBar title="Your account" />
       <Page>
+        {!firstSignIn && (
+          <Link to="/" className="btn-ghost mb-4 w-full bg-white py-3">
+            <ArrowLeft className="h-4 w-4" /> Back to schools
+          </Link>
+        )}
         {firstSignIn && (
           <section className="mb-4 rounded-3xl bg-amber-50 p-5 ring-1 ring-amber-200">
             <h2 className="font-display text-lg text-amber-900">Welcome! Choose your own password</h2>
@@ -55,7 +64,9 @@ export function AccountPage() {
           <h2 className="font-display text-lg">{firstSignIn ? "Set your password" : "Change password"}</h2>
           <input className="field" type="password" autoComplete="current-password" placeholder={firstSignIn ? "Temporary password" : "Current password"} value={current} onChange={(e) => setCurrent(e.target.value)} required />
           <input className="field" type="password" autoComplete="new-password" placeholder="New password (8+ characters)" value={next} onChange={(e) => setNext(e.target.value)} minLength={8} required />
-          <button className="btn-primary w-full" disabled={busy}>{busy ? "Saving…" : "Change password"}</button>
+          <button className="btn-primary w-full" disabled={busy}>
+            {busy ? "Saving…" : firstSignIn ? "Save and continue" : "Change password"}
+          </button>
           {status && <Notice tone={status.tone}>{status.text}</Notice>}
         </form>
 
