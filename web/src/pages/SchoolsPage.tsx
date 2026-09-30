@@ -24,7 +24,7 @@ export function SchoolsPage() {
         <div className="mx-auto max-w-2xl">
           <p className="font-display text-xs uppercase tracking-[0.2em] text-sky-300">Football. Faith. Future.</p>
           <h1 className="mt-2 font-display text-3xl">Hello, {me.name.split(" ")[0]}</h1>
-          <p className="mt-1 text-sm text-white/70">Pick your school to see the session, roles and tally.</p>
+          <p className="mt-1 text-sm text-white/70">Pick your school to see the session and roles.</p>
         </div>
       </div>
       <Page>
