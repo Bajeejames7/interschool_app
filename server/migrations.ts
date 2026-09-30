@@ -178,6 +178,18 @@ const migrations: { id: string; sql: string }[] = [
       ALTER TABLE users ADD COLUMN must_change_password boolean NOT NULL DEFAULT false;
     `,
   },
+  {
+    // Each school's own logo: a file shipped with the app ("logos/x.png") or
+    // one uploaded from Setup (a small data: URL). Empty shows the initials.
+    id: "004_program_logos",
+    sql: `
+      ALTER TABLE programs ADD COLUMN logo text NOT NULL DEFAULT '';
+      UPDATE programs SET logo = 'logos/rafiki.png'    WHERE slug = 'rafiki';
+      UPDATE programs SET logo = 'logos/daniels.png'   WHERE slug = 'daniels';
+      UPDATE programs SET logo = 'logos/icc-imara.png' WHERE slug = 'icc-imara';
+      UPDATE programs SET logo = 'logos/rosslyn.png'   WHERE slug = 'rosslyn';
+    `,
+  },
 ];
 
 export async function migrate(): Promise<void> {

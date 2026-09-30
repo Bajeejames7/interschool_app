@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, ShieldCheck } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, type Program } from "../lib/api";
 import { useMe } from "../lib/auth";
 import { keys, usePrograms } from "../lib/queries";
-import { Credit, ErrorNote, Notice, Page, Spinner, TopBar } from "../components/ui";
+import { Credit, ErrorNote, Notice, Page, SchoolBadge, Spinner, TopBar } from "../components/ui";
 
 const GROUPS: { kind: Program["kind"]; title: string }[] = [
   { kind: "intramural", title: "Intramurals" },
@@ -34,6 +34,20 @@ export function SchoolsPage() {
           <ErrorNote error={programs.error} onRetry={() => programs.refetch()} />
         ) : (
           <div className="-mt-10 space-y-6">
+            {me.isAdmin && (
+              <Link to="/people" className="card flex items-center gap-4 hover:ring-brand">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+                  <ShieldCheck className="h-6 w-6" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-display text-lg">{me.isSuperAdmin ? "Creator Control" : "People"}</span>
+                  <span className="block text-sm text-muted">
+                    {me.isSuperAdmin ? "Add coaches and users, and choose who is an admin" : "Choose who is an admin"}
+                  </span>
+                </span>
+                <ChevronRight className="h-5 w-5 text-muted" />
+              </Link>
+            )}
             {GROUPS.map(({ kind, title }) => {
               const list = programs.data.filter((p) => p.kind === kind);
               if (list.length === 0) return null;
@@ -48,12 +62,7 @@ export function SchoolsPage() {
                         className={`group rounded-2xl border-l-4 bg-navy p-4 text-white transition hover:brightness-110 ${p.archived ? "opacity-50" : ""}`}
                         style={{ borderColor: p.color }}
                       >
-                        <span
-                          className="grid h-11 w-11 place-items-center rounded-xl text-sm font-bold"
-                          style={{ backgroundColor: p.color }}
-                        >
-                          {p.shortCode}
-                        </span>
+                        <SchoolBadge program={p} size={48} />
                         <span className="mt-3 block text-sm font-bold leading-tight">{p.name}</span>
                         <span className="mt-1 flex items-center text-xs font-semibold text-amber-300">
                           {p.archived ? "Hidden" : "View details"} <ChevronRight className="h-3.5 w-3.5" />

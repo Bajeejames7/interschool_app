@@ -3,7 +3,7 @@ import { ArrowRight, CalendarCheck, Users } from "lucide-react";
 import { useProgramContext } from "../lib/program";
 import { useSession } from "../lib/queries";
 import { WEEKDAYS, longDate } from "../lib/dates";
-import { Credit, Page } from "../components/ui";
+import { Credit, Page, SchoolBadge } from "../components/ui";
 import { asset } from "../lib/base";
 
 export function ProgramHome() {
@@ -22,6 +22,9 @@ export function ProgramHome() {
         style={{ backgroundImage: `linear-gradient(to bottom, rgba(22,34,79,.92), rgba(22,34,79,.55) 45%, #16224f), url(${asset("hero.jpg")})` }}
       >
         <div className="mx-auto max-w-2xl">
+          <div className="mb-4 flex justify-center">
+            <SchoolBadge program={program} size={72} />
+          </div>
           <p className="text-center font-display text-sm uppercase tracking-[0.25em]">Ambassadors Football</p>
           <p className="text-center font-display text-sm uppercase tracking-[0.25em]">{program.name}</p>
           {program.tagline && (

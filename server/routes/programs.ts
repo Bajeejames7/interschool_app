@@ -25,7 +25,17 @@ export const Team = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
+// A logo is either a file shipped with the app or a small uploaded image.
+const Logo = z
+  .string()
+  .max(300_000, "That logo is too large; use a smaller image")
+  .refine(
+    (v) => v === "" || /^logos\/[a-z0-9_-]+\.(png|jpg|jpeg|webp|svg)$/.test(v) || /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v),
+    "Upload a PNG, JPG or WebP image",
+  );
+
 const Settings = z.object({
+  logo: Logo,
   name: text(60),
   shortCode: text(4).transform((s) => s.toUpperCase()),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -66,6 +76,7 @@ export interface ProgramRow {
   categories: string[];
   archived: boolean;
   position: number;
+  logo: string;
 }
 
 export async function findProgram(slug: string | string[] | undefined): Promise<ProgramRow> {
@@ -92,6 +103,7 @@ function present(p: ProgramRow) {
     teams: p.teams,
     categories: p.categories,
     archived: p.archived,
+    logo: p.logo,
   };
 }
 
@@ -176,6 +188,7 @@ programRoutes.patch("/programs/:slug", async (req, res) => {
   }
 
   const columns: Record<string, unknown> = {
+    logo: body.logo,
     name: body.name,
     short_code: body.shortCode,
     color: body.color,

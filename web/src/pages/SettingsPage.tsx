@@ -7,13 +7,34 @@ import { useMe } from "../lib/auth";
 import { useProgramContext } from "../lib/program";
 import { keys, usePeople } from "../lib/queries";
 import { WEEKDAYS } from "../lib/dates";
-import { Notice, Page } from "../components/ui";
+import { Notice, Page, SchoolBadge } from "../components/ui";
 
 type Draft = Pick<
   Program,
   | "name" | "shortCode" | "color" | "coordinatorName" | "tagline" | "notes" | "sessionWeekday"
-  | "availabilityOptions" | "defaultRoles" | "defaultSchedule" | "teams" | "categories" | "kind" | "archived"
+  | "availabilityOptions" | "defaultRoles" | "defaultSchedule" | "teams" | "categories" | "kind" | "archived" | "logo"
 >;
+
+/** Shrink an uploaded image to at most 256×256 so it stays small in the database. */
+async function shrinkImage(file: File): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error("That file is not an image"));
+      i.src = url;
+    });
+    const scale = Math.min(1, 256 / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 /** Setup for one school: admins and its coordinator tailor it here. */
 export function SettingsPage() {
@@ -35,6 +56,7 @@ export function SettingsPage() {
     categories: program.categories,
     kind: program.kind,
     archived: program.archived,
+    logo: program.logo,
   }));
   const [status, setStatus] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -79,6 +101,35 @@ export function SettingsPage() {
       </p>
 
       <div className="mt-5 space-y-4">
+        <Section title="Logo" hint="Shown on the school's card and pages. A square image works best.">
+          <div className="flex items-center gap-4">
+            <SchoolBadge program={{ ...program, ...draft }} size={72} />
+            <div className="flex flex-wrap gap-2">
+              <label className="btn-ghost cursor-pointer">
+                Upload logo
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) return;
+                    try {
+                      set("logo", await shrinkImage(file));
+                    } catch (err) {
+                      setStatus({ tone: "bad", text: err instanceof Error ? err.message : "Could not read that image" });
+                    }
+                  }}
+                />
+              </label>
+              {draft.logo && (
+                <button className="btn-ghost text-bad" onClick={() => set("logo", "")}>Remove</button>
+              )}
+            </div>
+          </div>
+        </Section>
+
         <Section title="Basics">
           <Field label="Name"><input className="field" value={draft.name} onChange={(e) => set("name", e.target.value)} /></Field>
           <div className="grid grid-cols-2 gap-3">

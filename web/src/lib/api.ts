@@ -107,6 +107,8 @@ export interface Program {
   teams: Team[];
   categories: string[];
   archived: boolean;
+  /** "logos/x.png" shipped with the app, an uploaded data: URL, or "" for initials. */
+  logo: string;
   canManage: boolean;
 }
 

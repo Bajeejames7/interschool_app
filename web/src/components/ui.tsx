@@ -64,6 +64,24 @@ export function Page({ children }: { children: ReactNode }) {
   return <main className="mx-auto max-w-2xl px-4 pb-32 pt-5">{children}</main>;
 }
 
+/** A school's logo on a white tile, or its initials in its colour if it has none. */
+export function SchoolBadge({ program, size = 44 }: { program: { logo: string; shortCode: string; color: string; name: string }; size?: number }) {
+  const style = { width: size, height: size };
+  if (program.logo) {
+    const src = program.logo.startsWith("data:") ? program.logo : asset(program.logo);
+    return (
+      <span className="grid shrink-0 place-items-center overflow-hidden rounded-xl bg-white p-1" style={style}>
+        <img src={src} alt={`${program.name} logo`} className="h-full w-full object-contain" />
+      </span>
+    );
+  }
+  return (
+    <span className="grid shrink-0 place-items-center rounded-xl text-sm font-bold text-white" style={{ ...style, backgroundColor: program.color }}>
+      {program.shortCode}
+    </span>
+  );
+}
+
 export function Credit({ coordinator }: { coordinator?: string }) {
   if (!coordinator) return null;
   return (
