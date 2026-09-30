@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import "./styles.css";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { queryClient } from "./lib/queries";
+import { BASE } from "./lib/base";
 import { ProgramShell } from "./components/ProgramShell";
 import { Spinner } from "./components/ui";
 import { AuthPage } from "./pages/AuthPage";
@@ -50,7 +51,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={BASE.replace(/\/$/, "")}>
           <App />
         </BrowserRouter>
       </AuthProvider>

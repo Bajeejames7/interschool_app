@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { Notice } from "../components/ui";
+import { asset } from "../lib/base";
 
 /** Email and password only — there is deliberately no Google sign-in. */
 export function AuthPage({ mode }: { mode: "signin" | "signup" }) {
@@ -36,9 +37,9 @@ export function AuthPage({ mode }: { mode: "signin" | "signup" }) {
     <div className="min-h-screen bg-navy">
       <div
         className="relative flex h-72 flex-col justify-end bg-cover bg-center px-6 pb-8 text-white"
-        style={{ backgroundImage: "linear-gradient(to top, #16224f 5%, rgba(22,34,79,.35)), url(/hero.jpg)" }}
+        style={{ backgroundImage: `linear-gradient(to top, #16224f 5%, rgba(22,34,79,.35)), url(${asset("hero.jpg")})` }}
       >
-        <img src="/logo.jpg" alt="Ambassadors Football" className="mb-4 h-16 w-16 rounded-xl" />
+        <img src={asset("logo.jpg")} alt="Ambassadors Football" className="mb-4 h-16 w-16 rounded-xl" />
         <h1 className="font-display text-3xl leading-tight">Show up ready.<br />Serve together.</h1>
         <p className="mt-2 font-display text-xs uppercase tracking-[0.2em] text-sky-300">Football. Faith. Future.</p>
       </div>

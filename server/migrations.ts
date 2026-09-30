@@ -1,4 +1,4 @@
-import { pool } from "./db.js";
+import { getPool } from "./db.js";
 
 /**
  * Database migrations, applied in order at startup. Each runs once, inside a
@@ -170,7 +170,7 @@ const migrations: { id: string; sql: string }[] = [
 ];
 
 export async function migrate(): Promise<void> {
-  const client = await pool.connect();
+  const client = await getPool().connect();
   try {
     await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       id text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`);

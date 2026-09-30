@@ -1,3 +1,5 @@
+import { BASE } from "./base";
+
 // Talking to the server. The login token lives in localStorage so a coach
 // stays signed in on their phone.
 
@@ -36,7 +38,7 @@ export async function api<T = any>(path: string, init: { method?: string; body?:
   const token = getToken();
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(`${BASE}api${path}`, {
       method: init.method ?? "GET",
       headers: {
         ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}),

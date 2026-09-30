@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../server/app.js";
-import { pool } from "../server/db.js";
+import { closePool, getPool } from "../server/db.js";
 import { migrate } from "../server/migrations.js";
 
 const app = createApp();
@@ -26,7 +26,7 @@ let coach: Awaited<ReturnType<typeof signUp>>;
 let coach2: Awaited<ReturnType<typeof signUp>>;
 
 beforeAll(async () => {
-  await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+  await getPool().query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   await migrate();
   creator = await signUp("Abel Hazina", "Abel@Ambassadors.test"); // case differs from CREATOR_EMAIL on purpose
   admin = await signUp("Ann Admin", "ann@example.com");
@@ -36,7 +36,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await pool.end();
+  await closePool();
 });
 
 describe("sign-up and sign-in", () => {

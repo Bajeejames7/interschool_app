@@ -2,7 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { config } from "./config.js";
-import { pool } from "./db.js";
+import { getPool } from "./db.js";
 import { migrate } from "./migrations.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -18,5 +18,5 @@ createApp(webDir).listen(config.port, () => {
 // Free hosting puts idle servers and databases to sleep. While the server is
 // awake, keep the database connection warm so the first tap is not slow.
 setInterval(() => {
-  pool.query("SELECT 1").catch(() => {});
+  getPool().query("SELECT 1").catch(() => {});
 }, 10 * 60 * 1000).unref();

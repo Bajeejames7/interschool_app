@@ -3,6 +3,7 @@ import { ArrowLeft, CalendarDays, ClipboardCheck, House, Settings, Trophy } from
 import { Link } from "react-router-dom";
 import { useProgram } from "../lib/queries";
 import { ErrorNote, Spinner, TopBar } from "./ui";
+import { asset } from "../lib/base";
 
 /** Frame for one school: top bar, the page, and the tab bar at the bottom. */
 export function ProgramShell() {
@@ -23,7 +24,7 @@ export function ProgramShell() {
         left={
           <Link to="/" aria-label="All schools" className="flex items-center gap-2 rounded-full p-1 pr-2 hover:bg-white/10">
             <ArrowLeft className="h-5 w-5" />
-            <img src="/logo.jpg" alt="" className="h-9 w-9 rounded-lg object-cover" />
+            <img src={asset("logo.jpg")} alt="" className="h-9 w-9 rounded-lg object-cover" />
           </Link>
         }
         title={program.data?.name}

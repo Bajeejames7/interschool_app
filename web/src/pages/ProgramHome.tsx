@@ -4,6 +4,7 @@ import { useProgramContext } from "../lib/program";
 import { useSession } from "../lib/queries";
 import { WEEKDAYS, longDate } from "../lib/dates";
 import { Credit, Page } from "../components/ui";
+import { asset } from "../lib/base";
 
 export function ProgramHome() {
   const program = useProgramContext();
@@ -18,7 +19,7 @@ export function ProgramHome() {
     <>
       <section
         className="bg-navy bg-cover bg-center px-4 pb-10 pt-8 text-white"
-        style={{ backgroundImage: "linear-gradient(to bottom, rgba(22,34,79,.92), rgba(22,34,79,.55) 45%, #16224f), url(/hero.jpg)" }}
+        style={{ backgroundImage: `linear-gradient(to bottom, rgba(22,34,79,.92), rgba(22,34,79,.55) 45%, #16224f), url(${asset("hero.jpg")})` }}
       >
         <div className="mx-auto max-w-2xl">
           <p className="text-center font-display text-sm uppercase tracking-[0.25em]">Ambassadors Football</p>

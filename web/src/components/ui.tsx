@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CircleUserRound, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { asset } from "../lib/base";
 
 export function Spinner({ label = "Loading…" }: { label?: string }) {
   return (
@@ -42,7 +43,7 @@ export function TopBar({ left, title }: { left?: ReactNode; title?: ReactNode })
       <div className="mx-auto flex h-16 max-w-2xl items-center gap-3 px-4">
         {left ?? (
           <Link to="/" aria-label="All schools">
-            <img src="/logo.jpg" alt="Ambassadors Football" className="h-10 w-10 rounded-lg object-cover" />
+            <img src={asset("logo.jpg")} alt="Ambassadors Football" className="h-10 w-10 rounded-lg object-cover" />
           </Link>
         )}
         <div className="min-w-0 flex-1 truncate font-display text-sm uppercase tracking-[0.12em]">{title}</div>
