@@ -1,0 +1,59 @@
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import "./styles.css";
+import { AuthProvider, useAuth } from "./lib/auth";
+import { queryClient } from "./lib/queries";
+import { ProgramShell } from "./components/ProgramShell";
+import { Spinner } from "./components/ui";
+import { AuthPage } from "./pages/AuthPage";
+import { SchoolsPage } from "./pages/SchoolsPage";
+import { ProgramHome } from "./pages/ProgramHome";
+import { SessionPage } from "./pages/SessionPage";
+import { CalendarPage } from "./pages/CalendarPage";
+import { TallyPage } from "./pages/TallyPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { PeoplePage } from "./pages/PeoplePage";
+import { AccountPage } from "./pages/AccountPage";
+
+function SignedIn({ children }: { children: React.ReactNode }) {
+  const { me, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <Spinner />;
+  if (!me) return <Navigate to="/signin" replace state={{ from: location.pathname }} />;
+  return <>{children}</>;
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/signin" element={<AuthPage mode="signin" />} />
+      <Route path="/signup" element={<AuthPage mode="signup" />} />
+      <Route path="/" element={<SignedIn><SchoolsPage /></SignedIn>} />
+      <Route path="/people" element={<SignedIn><PeoplePage /></SignedIn>} />
+      <Route path="/account" element={<SignedIn><AccountPage /></SignedIn>} />
+      <Route path="/p/:slug" element={<SignedIn><ProgramShell /></SignedIn>}>
+        <Route index element={<ProgramHome />} />
+        <Route path="session" element={<SessionPage />} />
+        <Route path="session/:date" element={<SessionPage />} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="tally" element={<TallyPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  </StrictMode>,
+);
