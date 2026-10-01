@@ -172,6 +172,18 @@ describe("schools, intramurals and clubs", () => {
     expect(res.body.shortCode).toBe("BH");
   });
 
+  it("lets admins delete an intramural or club with everything in it; coaches cannot", async () => {
+    const res = await as(admin.token).post("/api/programs", { name: "Kilimani Primary", shortCode: "KP", kind: "intramural" });
+    expect(res.status).toBe(201);
+    const slug = res.body.slug;
+    expect((await as(admin.token).post(`/api/programs/${slug}/updates`, { body: "First session Friday" })).status).toBe(201);
+    expect((await as(coach.token).del(`/api/programs/${slug}`)).status).toBe(403);
+    expect((await as(admin.token).del(`/api/programs/${slug}`)).status).toBe(200);
+    expect((await as(admin.token).get(`/api/programs/${slug}`)).status).toBe(404);
+    expect((await as(admin.token).get("/api/programs")).body.map((p: any) => p.slug)).not.toContain(slug);
+    expect((await as(admin.token).del(`/api/programs/${slug}`)).status).toBe(404);
+  });
+
   it("makes a coordinator admin of their own program only", async () => {
     expect((await as(admin.token).put("/api/programs/daniels/coordinators", { userIds: [coach.id] })).status).toBe(200);
     expect((await as(coach.token).get("/api/programs/daniels")).body.canManage).toBe(true);

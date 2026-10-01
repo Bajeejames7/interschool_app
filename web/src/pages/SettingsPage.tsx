@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { api, type AvailabilityOption, type Program, type ScheduleItem, type Team } from "../lib/api";
@@ -7,6 +7,7 @@ import { useMe } from "../lib/auth";
 import { useProgramContext } from "../lib/program";
 import { imageSrc } from "../lib/base";
 import { keys, usePeople } from "../lib/queries";
+import { useConfirm } from "../lib/confirm";
 import { WEEKDAYS } from "../lib/dates";
 import { Notice, Page, SchoolBadge } from "../components/ui";
 
@@ -273,6 +274,7 @@ export function SettingsPage() {
         </Section>
 
         {me.isAdmin && <CoordinatorsSection />}
+        {me.isAdmin && <DeleteSection />}
       </div>
 
       <div className="sticky bottom-20 mt-6 rounded-3xl bg-white/95 p-3 shadow-lg ring-1 ring-line backdrop-blur">
@@ -335,6 +337,46 @@ function ListEditor<T>({
       ))}
       <button className="btn-ghost" onClick={() => onChange([...items, make()])}><Plus className="h-4 w-4" /> Add</button>
     </div>
+  );
+}
+
+/** Admins delete a school, intramural or club for good. */
+function DeleteSection() {
+  const program = useProgramContext();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const confirm = useConfirm();
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const remove = async () => {
+    const ok = await confirm({
+      title: `Delete ${program.name}?`,
+      message: `Its sessions, check-ins, updates and tally points are deleted for everyone. This cannot be undone. To only hide it from coaches, set "Shown to coaches" to Hidden instead.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/programs/${program.slug}`, { method: "DELETE" });
+      queryClient.removeQueries({ queryKey: keys.program(program.slug) });
+      await queryClient.invalidateQueries({ queryKey: keys.programs });
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Not deleted");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Section title={`Delete this ${program.kind}`} hint="Only admins see this.">
+      <button className="btn-danger w-full" onClick={remove} disabled={busy}>
+        <Trash2 className="h-4 w-4" /> {busy ? "Deleting…" : `Delete ${program.name}`}
+      </button>
+      {error && <Notice tone="bad">{error}</Notice>}
+    </Section>
   );
 }
 

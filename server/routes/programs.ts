@@ -232,6 +232,16 @@ programRoutes.patch("/programs/:slug", async (req, res) => {
   res.json(present(await findProgram(p.slug)));
 });
 
+// Admins delete a school, intramural or club for good. Its sessions, check-ins,
+// updates, tally and coordinators go with it (ON DELETE CASCADE). To only hide
+// it from coaches, set archived instead.
+programRoutes.delete("/programs/:slug", async (req, res) => {
+  requireAdmin(me(req));
+  const p = await findProgram(req.params.slug);
+  await query("DELETE FROM programs WHERE id = $1", [p.id]);
+  res.json({ ok: true });
+});
+
 const Coordinators = z.object({ userIds: z.array(z.number().int().positive()).max(20) });
 
 programRoutes.put("/programs/:slug/coordinators", async (req, res) => {
