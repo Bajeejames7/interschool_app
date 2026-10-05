@@ -67,7 +67,7 @@ export function AuthPage() {
         </button>
 
         <p className="mt-6 text-center text-sm text-muted">
-          New coach? Ask Abel or James to create your account.
+          New coach? Ask Abel, James or an admin to create your account.
         </p>
         <p className="mt-2 text-center text-xs text-muted">Forgot your password? Ask an admin to set a new one for you.</p>
       </form>

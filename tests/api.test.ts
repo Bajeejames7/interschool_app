@@ -23,7 +23,7 @@ async function signIn(email: string, password = "password123") {
 
 type Account = Awaited<ReturnType<typeof signIn>>;
 
-/** A super admin creates the account; the person signs in with the temporary password. */
+/** An admin or super admin creates the account; the person signs in with the temporary password. */
 async function create(by: Account, name: string, email: string, role: "user" | "admin" = "user") {
   const res = await as(by.token).post("/api/users", { name, email, password: "password123", role });
   expect(res.status).toBe(201);
@@ -77,10 +77,20 @@ describe("accounts", () => {
     expect(coach.me.mustChangePassword).toBe(true);
   });
 
-  it("lets only super admins create accounts", async () => {
+  it("lets admins and super admins create accounts, but not coaches", async () => {
     const body = { name: "New One", email: "new@example.com", password: "password123" };
-    expect((await as(admin.token).post("/api/users", body)).status).toBe(403);
     expect((await as(coach.token).post("/api/users", body)).status).toBe(403);
+    const made = await create(admin, "New One", "new@example.com");
+    expect(made.me.role).toBe("user");
+    expect(made.me.mustChangePassword).toBe(true);
+    // Removing the account stays with super admins, even for the admin who made it.
+    expect((await as(admin.token).del(`/api/users/${made.id}`)).status).toBe(403);
+    expect((await as(superA.token).del(`/api/users/${made.id}`)).status).toBe(200);
+  });
+
+  it("never lets an admin create a super admin", async () => {
+    const res = await as(admin.token).post("/api/users", { name: "Sneaky", email: "sneaky2@example.com", password: "password123", role: "superadmin" });
+    expect(res.status).toBe(400);
   });
 
   it("refuses a second account with the same email", async () => {

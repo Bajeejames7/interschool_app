@@ -45,10 +45,12 @@ const NewPerson = z.object({
   role: z.enum(["user", "admin"]).default("user"),
 });
 
-// Only Abel and James create accounts. The person signs in with the temporary
-// password and is asked to choose their own straight away.
+// Admins and super admins create accounts (admins can already make anyone an
+// admin, so creating one directly gives them nothing new). Removing accounts
+// stays with super admins. The person signs in with the temporary password and
+// is asked to choose their own straight away.
 userRoutes.post("/users", async (req, res) => {
-  requireSuperAdmin(me(req));
+  requireAdmin(me(req));
   const body = NewPerson.parse(req.body);
   const created = await one<{ id: number }>(
     `INSERT INTO users (email, name, password_hash, role, must_change_password)

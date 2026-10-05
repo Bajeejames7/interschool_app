@@ -11,9 +11,9 @@ import { ErrorNote, Notice, Page, Spinner, TopBar } from "../components/ui";
 type Status = { tone: "good" | "bad"; text: string } | null;
 
 /**
- * Creator Control. Abel and James (super admins) create every account here and
- * choose who is an Admin. Admins see the same list as "People" and can make a
- * user an admin, but cannot create or remove accounts or demote an admin.
+ * Creator Control. Abel and James (super admins) and admins create accounts here
+ * and choose who is an Admin. Admins see it as "People"; they cannot remove
+ * accounts or demote an admin.
  */
 export function PeoplePage() {
   const me = useMe();
@@ -37,10 +37,10 @@ export function PeoplePage() {
         <p className="mt-1 text-sm text-muted">
           {me.isSuperAdmin
             ? "Create accounts for coaches and choose who is an Admin. Admins can edit coach roles, schedules and every school's setup."
-            : "Choose Admin to let someone edit coach roles, schedules and every school's setup. Only Abel and James create accounts or take admin away."}
+            : "Add coaches, and choose Admin to let someone edit coach roles, schedules and every school's setup. Only Abel and James remove accounts or take admin away."}
         </p>
 
-        {me.isSuperAdmin && <AddPerson onStatus={setStatus} />}
+        <AddPerson onStatus={setStatus} />
 
         <div className="relative mt-5">
           <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-muted" />

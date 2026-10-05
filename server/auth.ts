@@ -14,7 +14,7 @@ export interface User {
 
 /** What the app is told about the signed-in person. */
 export interface Me extends User {
-  /** Abel and James: create accounts and have the final say over admins. */
+  /** Abel and James: remove accounts and have the final say over admins. */
   isSuperAdmin: boolean;
   isAdmin: boolean;
   /** Set on accounts a super admin created: choose your own password first. */
